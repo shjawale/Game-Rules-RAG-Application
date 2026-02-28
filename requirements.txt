@@ -1,0 +1,8 @@
+pandas
+google-genai==1.7.0
+google-api-core --upgrade
+google-cloud-translate --upgrade
+chromadb==0.5.23
+seaborn
+kagglehub
+
