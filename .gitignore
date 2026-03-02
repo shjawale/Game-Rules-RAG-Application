@@ -1,0 +1,5 @@
+# API Keys and Environment Variables
+.env
+
+# Python caching
+__pycache__/
