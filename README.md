@@ -47,27 +47,24 @@ pip install -r requirements.txt
 ```
 
 ## Features
-* **Dataset**: Automatically downloads a board game dataset via ```kagglehub```.
-* **Vector Search**: Uses ```GeminiEmbeddingFunction``` to index and retrieve game descriptions.
-* **Grounding**: Integrates Google Search to provide citations and verify the accuracy of answers.
-* **Evaluation**: Includes an "AI-as-a-Judge" section that scores responses on a scale of 1–5 based on groundedness and completeness.
-* **Visualization**: Generates a heatmap to compare semantic similarity between RAG-based and Search-grounded answers.
+* **Automated Data Retrieval**: Downloads a board game dataset via ```kagglehub``` for immediate use.
+* **Semantic Vector Search**: Uses ```GeminiEmbeddingFunction``` to index and retrieve game descriptions.
+* **Search Grounding**: Integrates Google Search to provide citations and verify verify answer accuracy.
+* **AI-as-a-Judge Evaluation**: Includes an "AI-as-a-Judge" section that scores responses on a scale of 1–5 based on groundedness and completeness.
+* **Similarity Visualization**: Generates a heatmap to compare semantic similarity between RAG-based and Search-grounded results.
 
 
 ## What is RAG?
-Retrieval-Augmented Generation (RAG) is the core architecture of this application. It solves the problem of AI "hallucinations" by giving the model a specific set of facts to look at before it speaks.
+Retrieval-Augmented Generation (RAG) is the core architecture of this application. It prevents AI "hallucinations" by giving the model a specific set of rules to reference before it generates a response.
 
-The process uses three main steps:
+The process uses three main stages:
 
-**Retrieval**: A question, such as "How do I play Twilight Imperium?", is sent to the system. The system searches the ChromaDB vector database to find specific game descriptions and rules.
-    
-**Augmentation**: The system adds the retrieved game rules to the original question. It creates a detailed instruction: "Using these specific rules [Rules], answer this question [Question]."
-    
-**Generation**: The Gemini model uses the provided rules to generate a response. The answer is based only on the data provided, not the model's general training data.
+*    **Retrieval: When a question about a game is asked, for example, "How do I play Twilight Imperium?", the system searches the ChromaDB vector database to to isolate the rows that contain the most relevant data for that query.
+*    **Augmentation**: The system merges the user’s question with the retrieved data into a structured instruction, labeling each database entry as an individual "PASSAGE" to help the model clearly distinguish between different games or records.
+*    **Generation**: The Gemini model processes these specific passages to generate an answer. By grounding the response only in the provided database rows, it avoids relying on general training data and ensures the output is accurate to the selected games.
 
-#### Why use it here?
-
-Standard AI models may confuse board games with similar names or miss specific version updates. This RAG setup ensures that if the game is in the CSV file, the answer will be accurate to that specific entry.
+### Why use it?
+Standard AI models may confuse games with similar names or miss specific version updates. This RAG setup ensures that if a game is in the dataset, the answer will be accurate to that specific text.
 
 
 ## Quality Assurance & Verification
@@ -87,3 +84,24 @@ Google Search Grounding ensures factual accuracy and provides verifiable sources
 *    **Real-Time Verification**: The grounding tool connects to the live web to double-check dates, creators, or specific rules that may have been updated since the dataset was published.
 *    **Citations**: Footnotes and a bibliography are generated automatically. Each claim in the AI's response is mapped to a specific grounding_chunk with a title and source URL.
 *    **Trust Signals**: Every claim is cross-referenced against grounding_metadata to confirm supporting evidence exists for each statement. If supporting evidence for a claim is missing, the script can be configured to retry or flag the information as unverified.
+
+
+## Technical Insights
+Implementing this RAG pipeline on a sparse dataset of game rules provided several practical insights into how grounding and evaluation metrics work together to ensure accuracy.
+
+*    **Managing Data Sparsity**: Since the dataset had very little information per game, I used similarity scores to monitor retrieval quality. I found that when scores were low, the Groundedness metric became a critical safety check, ensuring the model prioritized accuracy over Completeness and refused to "invent" rules when the local data was missing.
+*    **Search Grounding Reliability**: As the primary embedding database was thin, adding external search grounding became the backbone of the system’s reliability. It allowed the pipeline to maintain high scores by pulling in accurate rules from the web whenever the local retrieval fell short.
+*    **Constraint Adherence**: Through the evaluator and Python Enum scoring, I confirmed that the model followed negative constraints (e.g., "Do not make up rules"). This is critical for rule-based datasets, where an incorrect rule is worse than no answer at all.
+
+
+## Project Workflow
+The implementation follows a modular pipeline. You can follow along in the code via the internal comments:
+
+*    Environment Setup: Library imports and API configuration.
+*    Database Creation: Embedding the game dataset for retrieval.
+*    RAG Pipeline: Finding relevant documents and generating answers.
+*    Evaluation Suite: Scoring the results via the "AI-as-a-Judge" framework.
+*    Grounding Tools: Running external search and calculating similarity scores.
+
+## Acknowledgments
+This project was developed as a Capstone for the Google 5-Day Gen AI Intensive Course. While following Google's recommended reference architectures for RAG and evaluation, I independently implemented the pipeline to see how LLM grounding performs on sparse, rule-based datasets.
